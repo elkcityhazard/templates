@@ -16,7 +16,7 @@ services:
       WORDPRESS_CONFIG_EXTRA: |
         define( 'WP_REDIS_HOST', getenv('REDIS_HOST') ?: 'redis' );
         define( 'WP_REDIS_PORT', getenv('REDIS_PORT') ?: 6379 );
-        define( 'WP_REDIS_PREFIX', 'miatc' );
+        define( 'WP_REDIS_PREFIX', 'wp_redis_' );
         define( 'WP_REDIS_DATABASE', 0 );
         define( 'WP_REDIS_TIMEOUT', 1 );
         define( 'WP_REDIS_READ_TIMEOUT', 1 );
