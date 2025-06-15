@@ -1,0 +1,105 @@
+services:
+  wordpress:
+    image: wordpress:latest
+    restart: always
+    container_name: project--wp
+    user: "33:33"
+    ports:
+      - 8000:80
+    environment:
+      WORDPRESS_DB_HOST: ${WORDPRESS_DB_HOST}
+      WORDPRESS_DB_USER: ${WORDPRESS_DB_USER}
+      WORDPRESS_DB_PASSWORD: ${WORDPRESS_DB_PASSWORD}
+      WORDPRESS_DB_NAME: ${WORDPRESS_DB_NAME}
+      REDIS_HOST: ${REDIS_HOST}
+      REDIS_PORT: ${REDIS_PORT}
+      WORDPRESS_CONFIG_EXTRA: |
+        define( 'WP_REDIS_HOST', getenv('REDIS_HOST') ?: 'redis' );
+        define( 'WP_REDIS_PORT', getenv('REDIS_PORT') ?: 6379 );
+        define( 'WP_REDIS_PREFIX', 'miatc' );
+        define( 'WP_REDIS_DATABASE', 0 );
+        define( 'WP_REDIS_TIMEOUT', 1 );
+        define( 'WP_REDIS_READ_TIMEOUT', 1 );
+    depends_on:
+      - db
+    volumes:
+      - wp_data:/var/www/html
+    networks:
+      - project_net
+  db:
+    image: mariadb
+    restart: always
+    container_name: project-db
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+    volumes:
+      - db_data:/var/lib/mysql
+      - ./seed.sql:/docker-entrypoint-initdb.d/seed.sql:ro
+    networks:
+      - project_net
+  adminer:
+    image: adminer:latest
+    restart: always
+    container_name: project-adminer
+    depends_on:
+      - db
+    environment:
+      ADMINER_DEFAULT_SERVER: db
+    ports:
+      - 8001:8080
+    networks:
+      - project_net
+  redis:
+    image: redis:latest
+    restart: always
+    container_name: project-redis
+    depends_on:
+      - db
+      - wordpress
+    ports:
+      - 8002:6379
+    volumes:
+      - redis_data:/data
+    networks:
+      - project_net
+  wpcli:
+    image: wordpress:cli
+    user: "33:33"
+    container_name: project-wpcli
+    working_dir: /var/www/html
+    command: tail -f /dev/null
+    environment:
+      WORDPRESS_DB_HOST: ${WORDPRESS_DB_HOST}
+      WORDPRESS_DB_USER: ${WORDPRESS_DB_USER}
+      WORDPRESS_DB_PASSWORD: ${WORDPRESS_DB_PASSWORD}
+      WORDPRESS_DB_NAME: ${WORDPRESS_DB_NAME}
+      REDIS_HOST: ${REDIS_HOST}
+      REDIS_PORT: ${REDIS_PORT}
+      WORDPRESS_CONFIG_EXTRA: |
+        define( 'WP_REDIS_HOST', getenv('REDIS_HOST') ?: 'redis' );
+        define( 'WP_REDIS_PORT', getenv('REDIS_PORT') ?: 6379 );
+        define( 'WP_REDIS_PREFIX', 'wp_redis_' );
+        define( 'WP_REDIS_DATABASE', 0 );
+        define( 'WP_REDIS_TIMEOUT', 1 );
+        define( 'WP_REDIS_READ_TIMEOUT', 1 );
+        define( 'WP_CLI_CACHE_DIR', '/tmp/.wp-cli/cache'); 
+    volumes:
+      - wp_data:/var/www/html
+    networks:
+      - project_net
+    depends_on:
+      - db
+      - wordpress
+
+volumes:
+  wp_data:
+  db_data:
+  redis_data:
+
+networks:
+  project_net:
+
+
