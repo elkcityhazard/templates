@@ -2,7 +2,7 @@ services:
   wordpress:
     image: wordpress:latest
     restart: always
-    container_name: project--wp
+    container_name: project-wp
     user: "33:33"
     ports:
       - 8000:80
