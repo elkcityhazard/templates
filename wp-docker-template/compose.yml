@@ -1,0 +1,55 @@
+services:
+  db:
+    image: mariadb:latest
+    restart: unless-stopped
+    ports:
+      - 3306:3306
+    environment:
+      MARIADB_USER: dbuser
+      MARIADB_PASSWORD: dbpass
+      MARIADB_ROOT_PASSWORD: dbrootpass
+      MARIADB_DATABASE: wpdb
+    volumes:
+      - db_data:/var/lib/mysql
+  wp:
+    image: wordpress:latest
+    restart: unless-stopped
+    depends_on:
+      - db
+    ports:
+      - 8787:80
+    environment:
+      WORDPRESS_DB_HOST: db
+      WORDPRESS_DB_USER: dbuser
+      WORDPRESS_DB_PASSWORD: dbpass
+      WORDPRESS_DB_NAME: wpdb
+      WORDPRESS_TABLE_PREFIX: wp_
+      WORDPRESS_DEBUG: 1
+    volumes:
+      - wp_data:/var/www/html
+      - ./themes:/var/www/html/wp-content/themes
+      - ./plugins:/var/www/html/wp-content/plugins
+      - ./custom.ini:/usr/local/etc/php/conf.d/custom.ini
+  wp-cli:
+    image: wordpress:cli
+    restart: unless-stopped
+    depends_on:
+      - db
+      - wp
+    environment:
+      WORDPRESS_DB_HOST: db
+      WORDPRESS_DB_USER: dbuser
+      WORDPRESS_DB_PASSWORD: dbpass
+      WORDPRESS_DB_NAME: wpdb
+      WORDPRESS_TABLE_PREFIX: wp_
+      WORDPRESS_DEBUG: 1
+    command: tail -F /dev/null
+    volumes:
+      - wp_data:/var/www/html
+      - ./themes:/var/www/html/wp-content/themes
+      - ./plugins:/var/www/html/wp-content/plugins
+      - ./custom.ini:/usr/local/etc/php/conf.d/custom.ini
+volumes:
+  wp_data:
+  db_data:
+
